@@ -1,0 +1,29 @@
+# runtime data (DBs, workspace, uploads, themes, logs) — never commit
+data/
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# node (dev-only tooling)
+node_modules/
+
+# editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# local artifacts
+*.log
+*.zip
+*.tar.gz

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NAgent — Admin</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="admin-body">
+<div class="admin-wrap">
+
+  <!-- login form (admin session required) -->
+  <div id="admin-login" class="gate-card" style="margin: 0 auto; width: 300px;">
+    <div class="gate-logo">◍</div>
+    <div class="gate-title">Admin</div>
+    <div class="gate-sub">нужна сессия администратора</div>
+    <input id="admin-user" type="text" placeholder="Имя пользователя" autocomplete="username">
+    <input id="admin-pass" type="password" placeholder="Пароль" autocomplete="current-password">
+    <div class="gate-error" id="admin-error"></div>
+    <button id="btn-admin-login" class="btn-primary">Войти</button>
+    <a class="gate-admin-link" href="/">← к обычному интерфейсу</a>
+  </div>
+
+  <!-- admin dashboard -->
+  <div id="admin-panel" class="hidden">
+    <div class="admin-top">
+      <h1>◍ Администрация сервера</h1>
+      <a class="btn-secondary" href="/">← интерфейс</a>
+      <button id="btn-admin-refresh" class="btn-secondary">Обновить</button>
+      <button id="btn-admin-logout" class="btn-danger-sm">Выйти</button>
+    </div>
+
+    <div id="admin-note" class="admin-note hidden"></div>
+
+    <div class="admin-stat-grid" id="admin-stats"></div>
+
+    <div class="admin-sec">Режим сервера (§2)</div>
+    <div class="exp-row">
+      <button class="onb-choice" data-mode="solo" style="flex:1"><span class="onb-radio"></span><div class="onb-txt"><b>Соло</b><span>без входа; один юзер</span></div></button>
+      <button class="onb-choice" data-mode="team" style="flex:1"><span class="onb-radio"></span><div class="onb-txt"><b>Команда</b><span>вход; общие провайдеры; shared-проекты</span></div></button>
+      <button class="onb-choice" data-mode="accounts" style="flex:1"><span class="onb-radio"></span><div class="onb-txt"><b>Аккаунты</b><span>изолированные папки и ключи</span></div></button>
+    </div>
+    <p class="hint">Смена режима сбрасывает сессии (все перезаходят). Общие чаты остаются в main.db — при возврате в соло/команду они снова видны.</p>
+
+    <div class="admin-sec">Рабочая папка (соло/команда)</div>
+    <form id="admin-ws-form" class="provider-form">
+      <input id="admin-ws" type="text" placeholder="/path/to/project">
+      <button type="submit" class="btn-primary">Сменить папку</button>
+    </form>
+
+    <div class="admin-sec">Мастер-пароль (§7, режим «команда»)</div>
+    <p class="hint">Опционально: ключи провайдеров запечатываются на диске (AES-GCM при установленном пакете cryptography, иначе stdlib-конверт). После перезапуска сервера — разблокировать здесь или через AGENT_MASTER_PASSWORD.</p>
+    <div id="master-state" class="hint"></div>
+    <form id="admin-master-form" class="provider-form">
+      <input id="admin-master-pw" type="password" placeholder="мастер-пароль (пусто = снять)">
+      <button type="submit" class="btn-primary">Применить</button>
+    </form>
+    <form id="admin-unlock-form" class="provider-form hidden">
+      <input id="admin-unlock-pw" type="password" placeholder="разблокировать (ввести мастер-пароль)">
+      <button type="submit" class="btn-secondary">Разблокировать</button>
+    </form>
+
+    <div class="admin-sec">Пользователи</div>
+    <form id="admin-user-form" class="provider-form">
+      <input id="au-name" type="text" placeholder="Имя пользователя" required>
+      <input id="au-pass" type="password" placeholder="Пароль" required>
+      <select id="au-role"><option value="member">участник</option><option value="admin">админ</option></select>
+      <button type="submit" class="btn-primary">Создать</button>
+    </form>
+    <table class="admin-table" id="users-table"></table>
+
+    <div class="admin-sec">Аудит тулкаллов (§2)</div>
+    <label class="toggle-row">
+      <span>Аудит включён (кто/сессия/модель/тулза/когда)</span>
+      <input type="checkbox" id="audit-enabled" class="toggle">
+    </label>
+    <div class="exp-row">
+      <button id="btn-audit-refresh" class="btn-secondary">Показать записи</button>
+    </div>
+    <table class="admin-table" id="audit-table"></table>
+
+    <div class="admin-sec">Логи</div>
+    <p class="hint">Полный просмотр — вкладка «Логи» в настройках основного интерфейса; экспорт — /api/logs/export.</p>
+  </div>
+</div>
+<script src="admin.js"></script>
+</body>
+</html>

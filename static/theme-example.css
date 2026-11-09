@@ -1,0 +1,73 @@
+/* ============================================================================
+   NAgent — EXAMPLE CUSTOM THEME (§16)
+   ----------------------------------------------------------------------------
+   This is a complete, commented reference: every variable the UI reads.
+   Copy it, change values, upload via Settings → Appearance → «Загрузить CSS».
+
+   How theming works:
+     1. The built-in style.css defines all variables in :root (light) and
+        in a prefers-color-scheme: dark media block (auto by system).
+     2. The server setting theme = 'auto' | 'light' | 'dark' sets
+        <html data-theme="..."> — manual values beat the media query.
+     3. THIS file loads AFTER style.css, so anything you set here wins.
+        You may override variables only, or add your own rules on top.
+   ============================================================================ */
+
+/* -- base palette --------------------------------------------------------- */
+:root {
+  --bg: #faf7f2;                       /* app background */
+  --sidebar-bg: rgba(250, 246, 240, .85);  /* sidebar translucent surface */
+  --panel: rgba(255, 253, 249, .75);   /* cards / panels */
+  --panel-solid: #fffcf7;              /* modals / popovers */
+  --border: rgba(60, 46, 32, .12);     /* hairlines */
+
+  --text: #33281c;                     /* primary text */
+  --text-dim: #8a7a64;                 /* secondary text */
+
+  --accent: #c4762b;                   /* buttons, links, focus rings */
+  --accent-soft: rgba(196, 118, 43, .13);  /* selected/hover wash */
+
+  /* reasoning blocks */
+  --think-bg: rgba(176, 108, 43, .07);
+  --think-border: rgba(176, 108, 43, .28);
+  --think-text: #9c6a2c;
+
+  /* semantic */
+  --danger: #c0392b;
+  --ok: #2e8b57;
+
+  --shadow: 0 12px 40px rgba(60, 46, 32, .16);
+
+  /* radii + fonts */
+  --radius-l: 16px;
+  --radius-m: 11px;
+  --radius-s: 8px;
+  --font: "Georgia", "Charter", -apple-system, serif;
+}
+
+/* force the same palette in dark mode (or drop this block and write your
+   own dark values — html[data-theme] selectors win over the media query) */
+html[data-theme="dark"] {
+  --bg: #211b14;
+  --sidebar-bg: rgba(38, 31, 24, .85);
+  --panel: rgba(51, 42, 33, .75);
+  --panel-solid: #2c2419;
+  --border: rgba(236, 222, 204, .12);
+  --text: #efe6d6;
+  --text-dim: #a5977f;
+  --accent: #e0954a;
+  --accent-soft: rgba(224, 149, 74, .16);
+  --think-bg: rgba(224, 149, 74, .10);
+  --think-border: rgba(224, 149, 74, .35);
+  --think-text: #e0a86a;
+  --danger: #e05d4f;
+  --ok: #58b98a;
+  --shadow: 0 12px 40px rgba(0, 0, 0, .55);
+}
+
+/* -- one example of a plain CSS rule on top of variables ----------------- */
+/* round the send button a little more */
+.send-btn { border-radius: 12px; }
+
+/* a subtle serif feel for assistant text only */
+.msg-assistant .msg-text { font-family: var(--font); }

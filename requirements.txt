@@ -1,0 +1,9 @@
+aiohttp>=3.9
+aiosqlite>=0.20
+httpx>=0.27
+
+# Optional extras (features degrade gracefully when missing):
+#   pip install 'httpx[socks]'   # socks4/socks5 proxies for websearch/webfetch
+#   pip install aiohttp-socks    # socks proxies for LLM API requests
+#   pip install playwright          # embedded browser (engines: chromium/firefox/webkit —
+#                                    # detect + install right from Settings -> Browser)

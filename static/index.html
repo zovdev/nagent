@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NAgent</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <!-- Sidebar: full-bleed web app, no fake desktop window -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <span class="brand-mark" aria-hidden="true"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.4"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg></span>
+        <span class="sidebar-title">NAgent</span>
+      </div>
+      <button id="btn-new-chat" class="icon-btn" title="Новый чат" data-i18n-title="newChat"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3.2v9.6M3.2 8h9.6"/></svg></button>
+    </div>
+    <div class="sidebar-search">
+      <input id="session-search" type="search" placeholder="Поиск по чатам…" title="Полнотекстовый поиск по сессиям" data-i18n-ph="searchChats" data-i18n-title="searchChatsT">
+      <div id="search-results" class="search-results hidden"></div>
+    </div>
+    <div id="chat-list" class="chat-list"></div>
+    <div class="sidebar-footer">
+      <div id="user-chip" class="user-chip hidden"></div>
+      <button id="btn-settings" class="sidebar-footer-btn" title="Настройки" data-i18n-title="settings"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="2.3"/><path d="M8 1.7v1.8M8 12.5v1.8M1.7 8h1.8M12.5 8h1.8M3.6 3.6l1.3 1.3M11.1 11.1l1.3 1.3M12.4 3.6l-1.3 1.3M4.9 11.1l-1.3 1.3"/></svg> <span data-i18n="settings">Настройки</span></button>
+    </div>
+  </aside>
+
+  <!-- Draggable divider: sidebar width -->
+  <div class="vsplit" id="vsplit-left" title="Потяните, чтобы менять ширину панели"></div>
+
+  <!-- Main area: chat column + right work panel (Codex-style views) -->
+  <div class="main-area">
+  <!-- Chat column -->
+  <main class="chat-col">
+    <header class="chat-header">
+      <div class="chat-header-title" id="chat-title" data-i18n="selectChat">Выберите чат</div>
+      <div class="chat-header-right">
+        <div id="usage-line" class="usage-line"></div>
+        <div class="chat-header-status" id="chat-status"></div>
+        <button id="btn-panel-toggle" class="icon-btn" title="Рабочая зона (файлы · гит · терминал · браузер)" data-i18n-title="workZone"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><rect x="1.8" y="2.6" width="12.4" height="10.8" rx="2"/><path d="M9.8 2.6v10.8"/></svg></button>
+      </div>
+    </header>
+
+    <div id="messages" class="messages">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-logo"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.4"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg></div>
+        <div class="empty-title" data-i18n="emptyTitle">Новый чат</div>
+        <div class="empty-sub" data-i18n="emptySub">Напишите сообщение, чтобы начать. Модель выбирается справа снизу.</div>
+      </div>
+    </div>
+
+    <footer class="composer">
+      <div id="attach-chips" class="attach-chips hidden"></div>
+      <div class="composer-box">
+        <button id="btn-attach" class="composer-btn" title="Прикрепить файл" data-i18n-title="attach"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12.4 7.2l-5.8 5.8a3 3 0 0 1-4.2-4.2l6.2-6.2a1.9 1.9 0 0 1 2.7 2.7l-6.2 6.1a.9.9 0 0 1-1.2-1.2l5.6-5.6"/></svg></button>
+        <input id="file-input" type="file" multiple hidden>
+        <button id="btn-plan" class="composer-btn plan-toggle" title="План-режим: агент сначала предложит план на одобрение" data-i18n-title="planMode"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="4.5" cy="3.6" r="1.7"/><circle cx="4.5" cy="12.4" r="1.7"/><circle cx="11.5" cy="8" r="1.7"/><path d="M4.5 5.3v5.4M6.3 4.3c2.6.7 3 2.2 3.5 3.1M6.3 11.7c2.6-.7 3-2.2 3.5-3.1"/></svg> <span data-i18n="plan">План</span></button>
+        <textarea id="input" rows="1" placeholder="Сообщение… (Enter — отправить, Shift+Enter — перенос)" data-i18n-ph="inputPh"></textarea>
+        <button id="btn-send" class="send-btn" title="Отправить" data-i18n-title="send"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.8V3.2M3.8 7.4L8 3.2l4.2 4.2"/></svg></button>
+        <button id="btn-stop" class="stop-btn hidden" title="Остановить генерацию" data-i18n-title="stop"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="4" y="4" width="8" height="8" rx="1.6"/></svg></button>
+      </div>
+      <div class="composer-meta">
+        <div id="error-line" class="error-line"></div>
+        <div id="ctx-meter" class="ctx-meter" title="Контекст чата" data-i18n-title="chatContext">
+          <div class="ctx-bar"><div id="ctx-fill" class="ctx-fill"></div></div>
+          <span id="ctx-label" data-i18n="context">контекст —</span>
+        </div>
+        <div class="model-picker" id="model-picker">
+          <button id="model-chip" class="model-chip" type="button" aria-haspopup="listbox" aria-expanded="false" title="Провайдер и модель — одним списком">
+            <span class="mc-dot" id="mc-dot"></span>
+            <span class="mc-name" id="mc-name">модель не выбрана</span>
+            <svg class="icon mc-chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5L8 10l3.5-3.5"/></svg>
+          </button>
+          <div id="model-pop" class="model-pop hidden" role="listbox" aria-label="Провайдер и модель"></div>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Draggable divider: work panel width (files/git side mode; hidden while
+       the panel is closed or in full mode) -->
+  <div class="vsplit hidden" id="vsplit-right" title="Потяните, чтобы менять ширину панели"></div>
+
+  <!-- Right working zone: files/git share the side layout;
+       terminal & browser go FULL-LAYOUT (Codex style) -->
+  <aside id="work-panel" class="work-panel hidden">
+    <div class="panel-tab-bar" role="tablist">
+      <button class="panel-tab active" data-ptab="files" role="tab" data-i18n="tabFiles">Файлы</button>
+      <button class="panel-tab" data-ptab="terminal" role="tab" data-i18n="tabTerminal">Терминал</button>
+      <button class="panel-tab" data-ptab="browser" role="tab" data-i18n="tabBrowser">Браузер</button>
+      <button id="btn-panel-close" class="icon-btn panel-close" title="Закрыть рабочую зону" data-i18n-title="closeWorkZone"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    </div>
+    <div class="panel-body">
+      <section class="panel-view active split-view" id="pview-files">
+        <div class="pane pane-files" id="pane-files">
+          <div class="pane-head">
+            <span class="pane-title" data-i18n="tabFiles">Файлы</span>
+            <button id="btn-tree-refresh" class="pane-btn" title="Обновить дерево" data-i18n-title="refresh"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13.2 8a5.2 5.2 0 11-1.6-3.8"/><path d="M13.4 1.8v2.6h-2.6"/></svg></button>
+          </div>
+          <div class="pane-scroll">
+            <div id="file-tree" class="file-tree"></div>
+          </div>
+          <div id="file-viewer" class="file-viewer hidden">
+            <div class="file-viewer-head">
+              <span id="file-viewer-path"></span>
+              <button id="btn-file-close" class="pane-btn" title="Закрыть"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+            </div>
+            <pre id="file-viewer-content"></pre>
+          </div>
+        </div>
+        <div class="pane-split" id="pane-split" title="Потянуть, чтобы менять высоту секций"></div>
+        <div class="pane pane-git" id="pane-git">
+          <div class="pane-head">
+            <span class="pane-title">Git</span>
+            <div class="pane-head-btns">
+              <button id="btn-cp-refresh" class="pane-btn" title="Обновить" data-i18n-title="refresh"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13.2 8a5.2 5.2 0 11-1.6-3.8"/><path d="M13.4 1.8v2.6h-2.6"/></svg></button>
+              <button id="btn-cp-manual" class="pane-btn wide" title="Чекпоинт сейчас"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3.2v9.6M3.2 8h9.6"/></svg> <span>чекпоинт</span></button>
+            </div>
+          </div>
+          <div class="pane-scroll">
+            <div id="cp-list" class="cp-list"></div>
+          </div>
+        </div>
+      </section>
+      <section class="panel-view" id="pview-terminal">
+        <div class="pane-head">
+          <span class="pane-title" data-i18n="tabTerminal">Терминал</span>
+          <button id="btn-term-clear" class="pane-btn" title="Очистить экран" data-i18n-title="clear"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+        </div>
+        <div id="term-log" class="term-log" tabindex="0"><div class="term-empty">Здесь появится живой вывод команд агента и фоновых задач.</div></div>
+      </section>
+      <section class="panel-view" id="pview-browser">
+        <div class="browser-bar">
+          <button id="btn-browser-back" class="icon-btn browser-nav" title="Назад"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5L5.5 8l4.5 4.5"/></svg></button>
+          <button id="btn-browser-fwd" class="icon-btn browser-nav" title="Вперёд"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5L10.5 8 6 12.5"/></svg></button>
+          <button id="btn-browser-reload" class="icon-btn browser-nav" title="Обновить"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.2 8a5.2 5.2 0 11-1.6-3.8"/><path d="M13.4 1.8v2.6h-2.6"/></svg></button>
+          <input id="browser-url" type="text" placeholder="URL — Enter, чтобы открыть" spellcheck="false">
+          <button id="btn-browser-go" class="btn-secondary">Открыть</button>
+          <button id="btn-browser-close" class="pane-btn" title="Закрыть сессию"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+        </div>
+        <div class="browser-stage">
+          <canvas id="browser-canvas" width="1024" height="640"></canvas>
+          <div id="browser-overlay" class="browser-overlay">подключение…</div>
+        </div>
+        <div class="browser-meta">
+          <label class="toggle-row small"><span>передавать ввод (клики/прокрутка)</span>
+            <input type="checkbox" id="browser-input" class="toggle" checked></label>
+          <span id="browser-fps" class="pane-title"></span>
+        </div>
+        <div id="browser-note" class="hint browser-note"></div>
+      </section>
+    </div><!-- /.panel-body -->
+  </aside>
+  </div><!-- /.main-area -->
+</div>
+
+<!-- Command palette (§6/§16): Ctrl+K (Cmd+K на маке) -->
+<div id="palette" class="modal-overlay hidden">
+  <div class="palette" role="dialog" aria-modal="true">
+    <input id="palette-input" type="text" placeholder="Действие, макрос, чат… (↑↓ — выбор, Enter — выполнить)" autocomplete="off" spellcheck="false">
+    <div id="palette-list" class="palette-list" role="listbox"></div>
+  </div>
+</div>
+
+<!-- Notification toasts (§10) -->
+<div id="toasts" class="toasts"></div>
+
+<!-- RAW view modal (§9): the whole turn as verbatim events -->
+<div id="raw-modal" class="modal-overlay hidden">
+  <div class="modal raw-modal" role="dialog" aria-modal="true">
+    <header class="modal-header">
+      <span>RAW-режим — весь поток как есть</span>
+      <button class="modal-close icon-btn" id="btn-raw-close"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    </header>
+    <div class="modal-body">
+      <p class="hint">Всё, что хранит сервер: think и текст без распарсинга, тулкаллы и ответы — JSON, мутации — как события. Редактирование — кнопкой правки на конкретном сообщении.</p>
+      <pre id="raw-content" class="raw-view"></pre>
+    </div>
+  </div>
+</div>
+
+<!-- edit-versions modal (§9): история правок сообщения -->
+<div id="versions-modal" class="modal-overlay hidden">
+  <div class="modal versions-modal" role="dialog" aria-modal="true">
+    <header class="modal-header">
+      <span>История правок</span>
+      <button class="modal-close icon-btn" id="btn-versions-close"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    </header>
+    <div class="modal-body">
+      <div id="versions-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- undo toast (§9): deletion is sent to the server ONLY after the timer -->
+<div id="undo-toast" class="undo-toast hidden">
+  <span id="undo-toast-text"></span>
+  <button id="btn-undo" class="btn-secondary">Отменить</button>
+</div>
+
+<!-- Revert merge-request modal -->
+<div id="mr-modal" class="modal-overlay hidden">
+  <div class="modal mr-modal" role="dialog" aria-modal="true">
+    <header class="modal-header">
+      <span>Откат чекпоинта — запрос на слияние</span>
+      <button class="modal-close icon-btn" id="btn-mr-close"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    </header>
+    <div class="modal-body">
+      <div id="mr-info" class="mr-info"></div>
+      <div id="mr-conflicts" class="mr-conflicts hidden"></div>
+      <pre id="mr-diff" class="diff-view"></pre>
+      <div class="mr-actions">
+        <button id="btn-mr-apply" class="btn-primary">Апрувнуть и применить</button>
+        <button id="btn-mr-force" class="btn-danger hidden">Применить с перезаписью</button>
+        <button id="btn-mr-cancel" class="btn-secondary">Оставить файлы</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings — System Settings layout: nav sidebar + content pane -->
+<div id="settings-modal" class="modal-overlay hidden">
+  <div class="modal settings-shell" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <header class="modal-header">
+      <span id="settings-title">Настройки</span>
+      <button class="modal-close icon-btn" id="btn-close-settings" title="Закрыть"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    </header>
+    <div class="settings-frame">
+      <nav class="settings-nav" role="tablist" aria-label="Разделы настроек">
+        <button class="tab active" data-tab="providers" role="tab"><span class="tab-ico ti-providers"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="5.2" height="4.2" rx="1.1"/><rect x="8.8" y="3" width="5.2" height="4.2" rx="1.1"/><rect x="2" y="8.8" width="5.2" height="4.2" rx="1.1"/><rect x="8.8" y="8.8" width="5.2" height="4.2" rx="1.1"/></svg></span><span data-i18n="tProviders">Провайдеры</span></button>
+        <button class="tab" data-tab="catalog" role="tab"><span class="tab-ico ti-catalog"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2l5.6 3v6L8 14 2.4 11V5z"/><path d="M2.4 5L8 8l5.6-3M8 8v6"/></svg></span><span data-i18n="tCatalog">Каталог</span></button>
+        <button class="tab" data-tab="mcp" role="tab"><span class="tab-ico ti-mcp"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.2"/><circle cx="3" cy="3.5" r="1.4"/><circle cx="13" cy="3.5" r="1.4"/><circle cx="3" cy="12.5" r="1.4"/><circle cx="13" cy="12.5" r="1.4"/><path d="M4.3 4.4L6.3 6.6M11.7 4.4L9.7 6.6M4.3 11.6l2-2.2M11.7 11.6l-2-2.2"/></svg></span><span data-i18n="tMcp">MCP</span></button>
+        <button class="tab" data-tab="permissions" role="tab"><span class="tab-ico ti-permissions"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.8L13 3.6v4.2c0 3.2-2.2 5.4-5 6.4-2.8-1-5-3.2-5-6.4V3.6z"/><path d="M5.9 7.9l1.6 1.6 2.7-2.9"/></svg></span><span data-i18n="tRights">Права</span></button>
+        <button class="tab" data-tab="reliability" role="tab"><span class="tab-ico ti-reliability"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5c1.5-4 4-4 5.5 0s4 4 5.5 0"/><path d="M2.5 12c1.5-4 4-4 5.5 0s4 4 5.5 0"/></svg></span><span data-i18n="tReliability">Надёжность</span></button>
+        <button class="tab" data-tab="context" role="tab"><span class="tab-ico ti-context"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h10M3 9.5h10"/><path d="M6.5 3v10M9.5 3v10"/></svg></span><span data-i18n="tContext">Контекст</span></button>
+        <button class="tab" data-tab="web" role="tab"><span class="tab-ico ti-web"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.8"/><path d="M2.2 8h11.6M8 2.2c1.9 2 2.8 3.7 2.8 5.8s-.9 3.8-2.8 5.8c-1.9-2-2.8-3.7-2.8-5.8s.9-3.8 2.8-5.8z"/></svg></span><span data-i18n="tWeb">Веб</span></button>
+        <button class="tab" data-tab="proxy" role="tab"><span class="tab-ico ti-proxy"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="8" r="2.2"/><circle cx="12" cy="8" r="2.2"/><path d="M6.2 8h3.6M8 5.8v4.4"/></svg></span><span data-i18n="tProxy">Прокси</span></button>
+        <button class="tab" data-tab="browser" role="tab"><span class="tab-ico ti-browser"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.8"/><path d="M10.8 3.4L8.6 8.6 3.4 10.8 6.4 6.4z"/></svg></span><span data-i18n="tBrowser">Браузер</span></button>
+        <button class="tab" data-tab="macros" role="tab"><span class="tab-ico ti-macros"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.8" y="3.2" width="12.4" height="9.6" rx="1.8"/><path d="M4 6h.02M6.5 6h.02M9 6h.02M11.5 6h.02M4 9.5h.02M6.5 9.5h3.5M11.5 9.5h.02"/></svg></span><span data-i18n="tMacros">Макросы и звуки</span></button>
+        <button class="tab" data-tab="skills" role="tab"><span class="tab-ico ti-skills"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.8l1.3 3.4 3.4 1.3-3.4 1.3L8 11.2 6.7 7.8 3.3 6.5l3.4-1.3z"/><path d="M12.5 10.2l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z"/></svg></span><span data-i18n="tSkills">Скилы</span></button>
+        <button class="tab" data-tab="hooks" role="tab"><span class="tab-ico ti-hooks"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.2L4 8.8c-1 1.4-.6 3 .6 3.6 1.2.6 2.6 0 3-1.2l3-6.4"/><path d="M10.5 10l1.5 1.6"/></svg></span><span data-i18n="tHooks">Хуки</span></button>
+        <button class="tab" data-tab="appearance" role="tab"><span class="tab-ico ti-appearance"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 1.8c-3 0-5.5 2.6-5.5 5.9 0 .9.2 1.7.5 2.4l-3.7 3.9 1.4 1.4 3.7-3.9c.7.3 1.5.5 2.3.5 3 0 5.5-2.6 5.5-5.9 0-1.2-.3-2.3-.9-3.2-.5 1.5-1.7 2.4-3 2.4-.2 0-.5 0-.7-.1.2-1.6-.5-3-1.9-3.7.5-.2 1.2-.4 1.8-.4z"/></svg></span><span data-i18n="tAppearance">Внешний вид</span></button>
+        <button class="tab" data-tab="logs" role="tab"><span class="tab-ico ti-logs"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.8h5L12.5 5v9.2H4z"/><path d="M9 1.8V5h3.5M6 8h4M6 10.5h4"/></svg></span><span data-i18n="tLogs">Логи</span></button>
+        <button class="tab" data-tab="export" role="tab"><span class="tab-ico ti-export"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10.5v-8M4.8 5.7L8 2.5l3.2 3.2"/><path d="M2.5 10v2.2a1.3 1.3 0 001.3 1.3h8.4a1.3 1.3 0 001.3-1.3V10"/></svg></span><span data-i18n="tExport">Экспорт</span></button>
+        <button class="tab" data-tab="chat" role="tab"><span class="tab-ico ti-chat"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 7.2c0 3-2.5 5.2-5.5 5.2-.7 0-1.4-.1-2-.3l-3 1.4.8-2.6c-1.1-1-1.8-2.3-1.8-3.7 0-3 2.5-5.2 5.5-5.2s6 2.2 6 5.2z"/></svg></span><span data-i18n="tChat">Чат</span></button>
+      </nav>
+      <div class="modal-body settings-content">
+
+      <section class="settings-section tab-panel active" id="sec-providers">
+        <h3>Провайдеры</h3>
+        <form id="provider-form" class="provider-form">
+          <input id="pf-name" type="text" placeholder="Название (необязательно)">
+          <input id="pf-host" type="text" placeholder="host, host/v1 или mock://demo" required>
+          <input id="pf-key" type="password" placeholder="API-ключ (необязательно для локальных)">
+          <input id="pf-proxy" type="text" placeholder="Прокси этого провайдера — http/socks5://user:pass@host:port (необязательно)">
+          <button type="submit" class="btn-primary">Подключить</button>
+        </form>
+        <div class="provider-actions">
+          <button id="btn-diagnostics" class="btn-secondary">Проверить всё</button>
+        </div>
+        <div id="provider-list" class="provider-list"></div>
+        <p class="hint">mock://demo — встроенный мок для проверки пайплайна; mock://flaky дважды падает, чтобы увидеть каскад fallback.</p>
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-catalog">
+        <h3>Каталог моделей</h3>
+        <p class="hint">Данные — из <code>/v1/models</code> провайдера. Что API не отдал — показано как неизвестное. «Проверить» отправляет пробный запрос и узнаёт длину контекста из ответа API.</p>
+        <div id="catalog-list"></div>
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-mcp">
+        <h3>MCP-серверы</h3>
+        <form id="mcp-form" class="provider-form">
+          <input id="mcp-url" type="text" placeholder="URL MCP-сервера (streamable HTTP)" required>
+          <button type="submit" class="btn-primary">Подключить</button>
+        </form>
+        <div id="mcp-list"></div>
+        <p class="hint">Discovery по официальному протоколу: initialize → tools/list → prompts/list → resources/list. Модель видит родные имена тулзов — роутинг на нужный сервер делает обвязка; суффикс <code>_2</code> появляется только при реальной коллизии имён.</p>
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-permissions">
+        <h3>Права и безопасность</h3>
+        <label class="toggle-row">
+          <span>Режим: спрашивать перед исполнением</span>
+          <input type="checkbox" id="perm-ask" class="toggle" checked>
+        </label>
+        <p class="hint">Выкл = allow all: чтение и «безопасный» bash идут всегда, запись/исполнение — без вопроса (кроме deny-правил и разрушительных команд). Вкл = каждое пишущее действие показывается карточкой в чате.</p>
+
+        <h3 class="sub-h">Таймауты тулзов</h3>
+        <div class="param-grid">
+          <label>по умолчанию, сек <input id="timeout-default" type="number" min="1" max="600" value="30"></label>
+          <label>максимум, сек <input id="timeout-max" type="number" min="1" max="3600" value="600"></label>
+        </div>
+        <p class="hint">Если тулза не успевает — модель получает подсказку повторить тот же вызов с параметром <code>timeout=N</code>; неудачный вызов затирается из контекста модели.</p>
+
+        <h3 class="sub-h">Изоляция (слой 2)</h3>
+        <label>режим
+          <select id="isolation-mode">
+            <option value="off">off — path-jail только</option>
+            <option value="docker">docker — bind-mount только рабочей папки</option>
+            <option value="bubblewrap">bubblewrap — ro-root + rw-workspace</option>
+          </select>
+        </label>
+
+        <h3 class="sub-h">Правила (deny приоритетнее)</h3>
+        <form id="rule-form" class="provider-form">
+          <select id="rule-effect">
+            <option value="deny">deny</option>
+            <option value="allow">allow</option>
+          </select>
+          <input id="rule-tool" type="text" placeholder="тулза (bash, write_file, *)">
+          <input id="rule-pattern" type="text" placeholder="паттерн (notes/** или git status*)">
+          <button type="submit" class="btn-primary">Добавить</button>
+        </form>
+        <div id="rule-list" class="rule-list"></div>
+        <div class="provider-actions">
+          <button id="btn-save-permissions" class="btn-primary">Сохранить</button>
+        </div>
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-reliability">
+        <h3>Fallback-каскад</h3>
+        <p class="hint">Порядок перебора при сбое: модель чата → затем этот список. Квота/лимит — переход сразу; 429 RPM и сетевые сбои — ретраи с бэкоффом (Retry-After уважается).</p>
+        <div id="chain-list" class="chain-list"></div>
+        <button id="btn-chain-add" class="btn-secondary"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3.2v9.6M3.2 8h9.6"/></svg> добавить резерв</button>
+
+        <h3 class="sub-h">Ретраи</h3>
+        <div class="param-grid">
+          <label>попыток на модель <input id="retry-attempts" type="number" min="1" max="10" value="2"></label>
+          <label>бэкофф
+            <select id="retry-backoff">
+              <option value="exp:1.5">экспоненциально, 1.5с</option>
+              <option value="exp:1">экспоненциально, 1с</option>
+              <option value="fixed:2">фиксированный, 2с</option>
+              <option value="fixed:5">фиксированный, 5с</option>
+              <option value="fixed:10">фиксированный, 10с</option>
+            </select>
+          </label>
+        </div>
+        <div class="provider-actions">
+          <button id="btn-save-reliability" class="btn-primary">Сохранить</button>
+        </div>
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-context">
+        <h3>Компакция и контекст</h3>
+        <p class="hint">Порог — одно поле: <code>80%</code> (процент окна модели из каталога) или <code>15000</code> (токены). Подсчёт — по реальному usage из ответов API, без локальных оценок. Середина заменяется выжимкой: модель видит компакт, юзер — всю историю.</p>
+        <div class="param-grid">
+          <label>порог (сервер по умолчанию) <input id="compact-threshold" type="text" placeholder="80% или 15000" value="80%"></label>
+          <label>лимит итераций лупа <input id="loop-limit" type="number" min="1" max="100" value="24"></label>
+          <label>сохранять голову (событий) <input id="compact-head" type="number" min="0" max="20" value="2"></label>
+          <label>сохранять хвост (событий) <input id="compact-tail" type="number" min="1" max="40" value="8"></label>
+        </div>
+        <label class="toggle-row">
+          <span>Авто-компакция после хода</span>
+          <input type="checkbox" id="compact-auto" class="toggle" checked>
+        </label>
+        <label class="toggle-row">
+          <span>Двухшаговая суммаризация больших выводов тулзов</span>
+          <input type="checkbox" id="two-step" class="toggle" checked>
+        </label>
+        <div class="param-grid">
+          <label>модель для компакции (дешёвая)
+            <select id="compact-model"><option value="">— как в чате —</option></select>
+          </label>
+          <label>модель-суммаризатор
+            <select id="summarizer-model"><option value="">— как в чате —</option></select>
+          </label>
+        </div>
+        <h3 class="sub-h">System prompt сервера</h3>
+        <textarea id="default-system" rows="3" placeholder="Инструкция для всех чатов (иерархия: сервер → чат → AGENTS.md)"></textarea>
+        <h3 class="sub-h">Детекторы лупа</h3>
+        <div class="param-grid">
+          <label>падений тулзы подряд до варнинга <input id="failure-streak" type="number" min="2" max="10" value="3"></label>
+        </div>
+        <p class="hint">Повторы (≥90% совпадение текста) останавливают ход с кнопкой «продолжить» — настройки не требуют.</p>
+        <div class="provider-actions">
+          <button id="btn-save-context" class="btn-primary">Сохранить</button>
+        </div>
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-web">
+        <h3>Поиск и веб-тулзы</h3>
+        <p class="hint">Результаты — только из реального бэкенда: duckduckgo (без ключа), SearXNG (свой инстанс) или Brave (API-ключ). Кеш глобален для сервера, fresh=true обходит его.</p>
+        <label>бэкенд поиска
+          <select id="search-backend">
+            <option value="off">off — поиск выключен</option>
+            <option value="duckduckgo">duckduckgo (без ключа)</option>
+            <option value="searxng">searxng (свой URL)</option>
+            <option value="brave">brave (API-ключ)</option>
+          </select>
+        </label>
+        <div class="param-grid">
+          <label>URL SearXNG <input id="searxng-url" type="text" placeholder="http://127.0.0.1:8888"></label>
+          <label>ключ Brave <input id="brave-key" type="password" placeholder="X-Subscription-Token"></label>
+          <label>кеш TTL, часов <input id="cache-ttl" type="number" min="1" max="720" value="24"></label>
+          <label>кеш лимит, МБ <input id="cache-cap" type="number" min="1" max="1024" value="50"></label>
+        </div>
+        <div class="provider-actions">
+          <button id="btn-webtools-test" class="btn-secondary">Диагностика веб-слоя</button>
+          <button id="btn-cache-clear" class="btn-danger-sm">Очистить кеш</button>
+          <button id="btn-save-web" class="btn-primary">Сохранить</button>
+        </div>
+        <div id="webtools-report"></div>
+
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-proxy">
+        <h3>Прокси</h3>
+        <p class="hint">Каждое направление исходящего трафика — свой прокси: http/https/socks4/socks5, логин:пароль можно вписать прямо в URL. Пустое поле наследует уровень выше: websearch и webfetch наследуют web, остальные роуты — global. Адрес без протокола считается http://.</p>
+        <div class="param-grid">
+          <label>global — весь трафик <input id="proxy-global" type="text" placeholder="http://user:pass@host:port"></label>
+          <label>model_api — запросы к LLM <input id="proxy-model" type="text" placeholder="— наследует global —"></label>
+          <label>websearch — веб-поиск <input id="proxy-websearch" type="text" placeholder="— наследует web → global —"></label>
+          <label>webfetch — загрузка страниц <input id="proxy-webfetch" type="text" placeholder="— наследует web → global —"></label>
+          <label>web — оба веб-тула <input id="proxy-web" type="text" placeholder="— наследует global —"></label>
+          <label>browser — встроенный браузер <input id="proxy-browser" type="text" placeholder="— наследует global —"></label>
+        </div>
+        <div class="provider-actions">
+          <button id="btn-save-proxy" class="btn-primary">Сохранить</button>
+        </div>
+        <p class="hint" id="proxy-note"></p>
+        <h3 class="sub-h">Прокси отдельного провайдера</h3>
+        <p class="hint">Во вкладке «Провайдеры» у каждой карточки есть кнопка «Прокси» — он приоритетнее model_api и global для запросов этого провайдера.</p>
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-browser">
+        <h3>Встроенный браузер</h3>
+        <p class="hint">Движки — штатные средства Playwright: поиск установленных идёт по путям самого Playwright, установка — его установщиком. По умолчанию используется первый установленный.</p>
+        <div id="browser-engines" class="engine-list"></div>
+        <div class="provider-actions">
+          <button id="btn-engines-refresh" class="btn-secondary">Обновить</button>
+        </div>
+        <p class="hint" id="browser-engines-note"></p>
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-macros">
+        <h3>Макросы</h3>
+        <p class="hint">Имя + промпт-шаблон + действие: «вставить в ввод» или «выполнить сразу». Запуск — из палитры Ctrl+K или хоткеем (ctrl+shift+1…9, alt+shift+буква).</p>
+        <form id="macro-form" class="provider-form">
+          <input id="mf-name" type="text" placeholder="Имя макроса" required>
+          <input id="mf-hotkey" type="text" placeholder="Хоткей: ctrl+shift+1">
+          <select id="mf-mode">
+            <option value="fill">вставить в ввод</option>
+            <option value="run">выполнить сразу</option>
+          </select>
+          <textarea id="mf-prompt" rows="2" placeholder="Промпт-шаблон…" required></textarea>
+          <button type="submit" class="btn-primary">Добавить</button>
+        </form>
+        <div id="macro-list"></div>
+
+        <h3 class="sub-h">Звуки и уведомления</h3>
+        <label class="toggle-row"><span>Звуки включены</span>
+          <input type="checkbox" id="sounds-enabled" class="toggle" checked></label>
+        <label class="toggle-row"><span>Ход завершён</span>
+          <input type="checkbox" id="sound-turn" class="toggle" checked></label>
+        <label class="toggle-row"><span>Фоновая задача завершена</span>
+          <input type="checkbox" id="sound-task" class="toggle" checked></label>
+        <div class="param-grid">
+          <label>звук «ход завершён»
+            <select id="sound-file-turn"><option value="">— встроенный —</option></select></label>
+          <label>звук «задача завершена»
+            <select id="sound-file-task"><option value="">— встроенный —</option></select></label>
+        </div>
+        <form id="sound-upload-form" class="provider-form">
+          <input id="sound-file" type="file" accept=".mp3,.wav,.ogg,.m4a">
+          <button type="submit" class="btn-secondary">Загрузить звук</button>
+        </form>
+        <div class="provider-actions">
+          <button id="btn-save-macros" class="btn-primary">Сохранить</button>
+        </div>
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-skills">
+        <h3 data-i18n="skillsH">Скилы</h3>
+        <p class="hint" data-i18n="skillsHint">SkillSearch-паттерн: модель видит названия и краткие описания, тело подгружается тулзой skill_load. Формат SKILL.md — frontmatter (name, description) + markdown-тело. Импорт/экспорт круглый.</p>
+        <form id="skill-form" class="provider-form">
+          <input id="sf-name" type="text" placeholder="Имя скила" data-i18n-ph="skillName" required>
+          <input id="sf-desc" type="text" placeholder="Краткое описание (для skill_search)" data-i18n-ph="skillDesc">
+          <textarea id="sf-body" rows="4" placeholder="Markdown-тело: инструкции для модели…" data-i18n-ph="skillBody" required></textarea>
+          <button type="submit" class="btn-primary" data-i18n="save">Сохранить</button>
+        </form>
+        <div id="skill-list"></div>
+        <form id="skill-import-form" class="provider-form">
+          <input id="skill-file" type="file" accept=".md,.txt">
+          <button type="submit" class="btn-secondary" data-i18n="importSkillMd">Импортировать SKILL.md</button>
+        </form>
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-hooks">
+        <h3 data-i18n="hooksH">Хуки</h3>
+        <p class="hint" data-i18n="hooksHint">Событие → команда. Команда получает JSON на stdin (event, chat_id, tool, args, user…), запускается в рабочей папке с таймаутом. PreToolUse и UserPromptSubmit могут блокировать: stdout {"decision":"block","reason":"…"}; UserPromptSubmit может дописать контекст: {"context":"…"}.</p>
+        <form id="hook-form" class="provider-form">
+          <select id="hf-event">
+            <option value="PreToolUse">PreToolUse</option>
+            <option value="PostToolUse">PostToolUse</option>
+            <option value="UserPromptSubmit">UserPromptSubmit</option>
+            <option value="Stop">Stop</option>
+            <option value="Notification">Notification</option>
+          </select>
+          <input id="hf-command" type="text" placeholder="Команда (например: python fmt.py)" data-i18n-ph="hookCmd" required>
+          <input id="hf-timeout" type="number" min="1" max="60" value="10" title="сек" style="max-width:90px">
+          <button type="submit" class="btn-primary" data-i18n="add">Добавить</button>
+        </form>
+        <div id="hook-list"></div>
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-appearance">
+        <h3 data-i18n="appearanceH">Внешний вид</h3>
+        <div class="param-grid">
+          <label><span data-i18n="lang">Язык</span>
+            <select id="ui-lang">
+              <option value="ru">Русский</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          <label><span data-i18n="theme">Тема</span>
+            <select id="theme-select">
+              <option value="auto" data-i18n="themeAuto">авто (по системе)</option>
+              <option value="light" data-i18n="themeLight">светлая</option>
+              <option value="dark" data-i18n="themeDark">тёмная</option>
+            </select>
+          </label>
+          <label><span data-i18n="customCss">Кастомный CSS</span>
+            <select id="custom-css-select"><option value="" data-i18n="none">— нет —</option></select>
+          </label>
+        </div>
+        <div class="exp-row">
+          <form id="theme-upload-form" class="provider-form" style="flex:1">
+            <input id="theme-file" type="file" accept=".css">
+            <button type="submit" class="btn-secondary" data-i18n="uploadCss">Загрузить CSS</button>
+          </form>
+          <a id="theme-example-link" class="btn-secondary" href="/theme-example.css" download data-i18n="exampleCss">Пример со комментариями</a>
+        </div>
+        <div id="theme-files" class="hint"></div>
+        <div class="provider-actions">
+          <button id="btn-save-appearance" class="btn-primary" data-i18n="save">Сохранить</button>
+        </div>
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-logs">
+        <h3 data-i18n="logsH">Логи сервера</h3>
+        <div class="param-grid">
+          <label><span data-i18n="minLevel">Мин. уровень</span>
+            <select id="log-level">
+              <option value="debug">debug</option>
+              <option value="info" selected>info</option>
+              <option value="warning">warning</option>
+              <option value="error">error</option>
+            </select>
+          </label>
+        </div>
+        <div class="provider-actions">
+          <button id="btn-logs-refresh" class="btn-secondary" data-i18n="refresh">Обновить</button>
+          <button id="btn-logs-export" class="btn-secondary" data-i18n="exportForSupport">Экспорт для саппорта</button>
+          <button id="btn-logs-clear" class="btn-danger-sm" data-i18n="clear">Очистить</button>
+        </div>
+        <div id="log-view" class="log-view"></div>
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-export">
+        <h3 data-i18n="exportH">Экспорт / импорт</h3>
+        <p class="hint" data-i18n="exportHint">JSON — полный фиделити: все события, правки, мутации; импорт восстанавливает роллаут один в один. MD — читаемый транскрипт нашего формата: переносится в другой чат, мутации не переносятся.</p>
+        <div class="exp-row">
+          <button id="btn-export-json" class="btn-secondary" data-i18n="expJson">Экспорт чата — JSON</button>
+          <button id="btn-export-md" class="btn-secondary" data-i18n="expMd">Экспорт чата — Markdown</button>
+        </div>
+        <h3 class="sub-h" data-i18n="impH">Импорт</h3>
+        <form id="import-form" class="provider-form">
+          <input id="import-file" type="file" accept=".json,.md" required>
+          <input id="import-prefix" type="text" placeholder="Префикс заголовка (необязательно)" data-i18n-ph="impPrefix">
+          <button type="submit" class="btn-primary" data-i18n="importChat">Импортировать</button>
+        </form>
+        <div id="import-result" class="hint"></div>
+      </section>
+
+      <section class="settings-section tab-panel" id="sec-chat">
+        <h3>System prompt</h3>
+        <textarea id="system-prompt" rows="4" placeholder="Инструкция для модели в этом чате…"></textarea>
+        <p class="hint">Иерархия: сервер-дефолт (вкладка «Контекст») → этот промпт → AGENTS.md из рабочей папки (подхватывается автоматически, агент не может дописывать его молча).</p>
+
+        <h3 class="sub-h">Порог компакции этого чата</h3>
+        <label>порог <input id="chat-compact-threshold" type="text" placeholder="наследует серверный (80% или 15000)"></label>
+
+        <h3 class="sub-h">Встроенные действия</h3>
+        <div class="provider-actions">
+          <button id="btn-compact-now" class="btn-secondary">Сжать сейчас (compact)</button>
+          <button id="btn-clear-context" class="btn-danger-sm">Очистить контекст</button>
+        </div>
+
+        <h3 class="sub-h">Think-блоки</h3>
+        <label class="toggle-row">
+          <span>Отправлять полный контекст вместе с think-блоками</span>
+          <input type="checkbox" id="send-think" class="toggle">
+        </label>
+        <p class="hint">Выкл — think-блоки видны в UI, но санируются из истории перед отправкой модели.</p>
+
+        <h3 class="sub-h">Параметры генерации</h3>
+        <p class="hint">Per chat: применяются к каждому ходу; пустое поле — не отправляется.</p>
+        <div class="param-grid">
+          <label>temperature <input id="gen-temp" type="number" min="0" max="2" step="0.1" placeholder="—"></label>
+          <label>top_p <input id="gen-topp" type="number" min="0" max="1" step="0.05" placeholder="—"></label>
+          <label>max_tokens <input id="gen-max" type="number" min="1" step="1" placeholder="—"></label>
+          <label>reasoning effort
+            <select id="gen-effort">
+              <option value="">—</option>
+              <option value="low">low</option>
+              <option value="medium">medium</option>
+              <option value="high">high</option>
+            </select>
+          </label>
+        </div>
+        <div class="provider-actions">
+          <button id="btn-save-system" class="btn-primary">Сохранить</button>
+        </div>
+      </section>
+
+    </div><!-- /.settings-content -->
+    </div><!-- /.settings-frame -->
+  </div>
+</div>
+
+<!-- Login gate (§2 team/accounts) -->
+<div id="gate-overlay" class="gate-overlay hidden">
+  <div class="gate-card">
+    <div class="gate-logo"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.4"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg></div>
+    <div class="gate-title">NAgent</div>
+    <div class="gate-sub" id="gate-sub">войдите, чтобы продолжить</div>
+    <input id="gate-user" type="text" placeholder="Имя пользователя" autocomplete="username">
+    <input id="gate-pass" type="password" placeholder="Пароль" autocomplete="current-password">
+    <div class="gate-error" id="gate-error"></div>
+    <button id="btn-gate-login" class="btn-primary" data-i18n="login">Войти</button>
+    <a class="gate-admin-link" href="/admin" data-i18n="adminLink">Администрация → /admin</a>
+  </div>
+</div>
+
+<!-- Unknown-model capability modal: nothing known about the model -->
+<div id="caps-modal" class="modal-overlay hidden">
+  <div class="modal caps-modal" role="dialog" aria-modal="true">
+    <header class="modal-header">
+      <span id="caps-title">Возможности модели неизвестны</span>
+      <button class="modal-close icon-btn" id="btn-caps-close"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    </header>
+    <div class="modal-body">
+      <p class="hint" id="caps-sub">API ничего не сообщил о модели. Длину контекста можно проверить пробным запросом или указать вручную.</p>
+      <div class="caps-model-line" id="caps-model-line"></div>
+      <button id="btn-caps-probe" class="btn-secondary">Проверить контекст через API</button>
+      <div id="caps-probe-result" class="hint"></div>
+      <label class="param-grid-label">Что умеет модель</label>
+      <div class="caps-toggles" id="caps-toggles">
+        <label class="toggle-row small"><span>vision — изображения</span><input type="checkbox" data-cap="vision" class="toggle"></label>
+        <label class="toggle-row small"><span>thinking — reasoning / think-блоки</span><input type="checkbox" data-cap="thinking" class="toggle"></label>
+        <label class="toggle-row small"><span>tools — вызов инструментов</span><input type="checkbox" data-cap="tools" class="toggle"></label>
+        <label class="toggle-row small"><span>video — видео</span><input type="checkbox" data-cap="video" class="toggle"></label>
+        <label class="toggle-row small"><span>audio — аудио</span><input type="checkbox" data-cap="audio" class="toggle"></label>
+        <label class="toggle-row small"><span>embedding — эмбеддинг-модель</span><input type="checkbox" data-cap="embedding" class="toggle"></label>
+      </div>
+      <label class="param-grid-label">Длина контекста, токенов</label>
+      <input id="caps-context" type="number" min="1024" step="1024" placeholder="неизвестно">
+      <div class="caps-actions">
+        <button id="btn-caps-save" class="btn-primary">Сохранить и отправить</button>
+        <button id="btn-caps-skip" class="btn-secondary">Отправить без этого</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Browser-missing modal: the model asked for a browser, none installed -->
+<div id="browser-modal" class="modal-overlay hidden">
+  <div class="modal caps-modal" role="dialog" aria-modal="true">
+    <header class="modal-header">
+      <span>Нужен браузер</span>
+      <button class="modal-close icon-btn" id="btn-browser-modal-close"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    </header>
+    <div class="modal-body">
+      <p class="hint">Модель запросила браузер, но ни один движок Playwright не установлен. Выберите движок и установите — установщик штатный, от Playwright.</p>
+      <div id="browser-modal-engines" class="engine-list"></div>
+      <div id="browser-modal-log" class="hint"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding wizard: first entered = admin -->
+<div id="onb-overlay" class="modal-overlay hidden">
+  <div class="modal onb-card" role="dialog" aria-modal="true">
+    <header class="modal-header">
+      <span data-i18n="onbHead">Первый запуск</span>
+    </header>
+    <div class="modal-body">
+      <div class="onb-steps" id="onb-steps">
+        <div class="onb-step active" data-step="1"></div>
+        <div class="onb-step" data-step="2"></div>
+        <div class="onb-step" data-step="3"></div>
+        <div class="onb-step" data-step="4"></div>
+      </div>
+      <div id="onb-body"></div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
